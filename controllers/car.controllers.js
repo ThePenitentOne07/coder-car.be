@@ -29,20 +29,34 @@ carController.createCar = async (req, res, next) => {
 
 //Get all car
 carController.getCars = async (req, res, next) => {
-  //in real project you will getting condition from from req then construct the filter object for query
-  // empty filter mean get all
-  const filter = {};
+  const { page = 1, limit = 10 } = req.query; // Get page and limit from query params, with defaults
+  const filter = {}; // You can modify this filter based on conditions from req
+
   try {
-    //mongoose query
-    car.f;
-    const listOfFound = await car.find(filter).limit(2);
+    const count = await car.countDocuments(filter); // Get total count of cars matching the filter
+    const listOfFound = await car
+      .find(filter)
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit)); // Apply pagination
+
+    const totalPages = Math.ceil(count / parseInt(limit));
+
+    if (!listOfFound.length) {
+      return sendResponse(res, 404, false, null, "No cars found", "No cars found with the specified criteria");
+    }
+
     sendResponse(
       res,
       200,
       true,
-      { car: listOfFound, page: 1, total: 1192 },
+      {
+        car: listOfFound,
+        message: "Get Car List Successfully!",
+        page: page.toString(),
+        total: totalPages,
+      },
       null,
-      "Get Car List Successfully!"
+      null
     );
   } catch (err) {
     next(err);
